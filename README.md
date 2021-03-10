@@ -1,1 +1,1 @@
-# genetic_link_metabolism_neurodegeneration
+# The genetic basis of the association between metabolic rate and neurodegeneration in Drosophila melanogaster
