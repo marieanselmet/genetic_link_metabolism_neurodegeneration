@@ -1,0 +1,173 @@
+#SUBMITTED ID	FBID_KEY	NAME	SYMBOL
+FBgn0000017	FBgn0000017	Abl tyrosine kinase	Abl
+FBgn0000108	FBgn0000108	beta amyloid protein precursor-like	Appl
+FBgn0000117	FBgn0000117	armadillo	arm
+FBgn0000119	FBgn0000119	arrow	arr
+FBgn0000229	FBgn0000229	basket	bsk
+FBgn0000248	FBgn0000248	cabbage	cab
+FBgn0000273	FBgn0000273	Protein kinase, cAMP-dependent, catalytic subunit 1	Pka-C1
+FBgn0000422	FBgn0000422	Dopa decarboxylase	Ddc
+FBgn0000479	FBgn0000479	dunce	dnc
+FBgn0000535	FBgn0000535	ether a go-go	eag
+FBgn0000536	FBgn0000536	easily shocked	eas
+FBgn0000546	FBgn0000546	Ecdysone receptor	EcR
+FBgn0000635	FBgn0000635	Fasciclin 2	Fas2
+FBgn0000721	FBgn0000721	foraging	for
+FBgn0001123	FBgn0001123	G protein alpha s subunit	Galphas
+FBgn0001208	FBgn0001208	Henna	Hn
+FBgn0002932	FBgn0002932	neuralized	neur
+FBgn0003015	FBgn0003015	oskar	osk
+FBgn0003068	FBgn0003068	period	per
+FBgn0003093	FBgn0003093	Protein C kinase 98E	Pkc98E
+FBgn0003165	FBgn0003165	pumilio	pum
+FBgn0003301	FBgn0003301	rutabaga	rut
+FBgn0003371	FBgn0003371	shaggy	sgg
+FBgn0003380	FBgn0003380	Shaker	Sh
+FBgn0003392	FBgn0003392	shibire	shi
+FBgn0003502	FBgn0003502	Btk family kinase at 29A	Btk29A
+FBgn0003513	FBgn0003513	spineless	ss
+FBgn0003520	FBgn0003520	staufen	stau
+FBgn0003731	FBgn0003731	Epidermal growth factor receptor	Egfr
+FBgn0003861	FBgn0003861	transient receptor potential	trp
+FBgn0003897	FBgn0003897	turnip	tur
+FBgn0003984	FBgn0003984	vein	vn
+FBgn0003996	FBgn0003996	white	w
+FBgn0004101	FBgn0004101	blistered	bs
+FBgn0004103	FBgn0004103	Protein phosphatase 1 at 87B	Pp1-87B
+FBgn0004168	FBgn0004168	5-hydroxytryptamine (serotonin) receptor 1A	5-HT1A
+FBgn0004244	FBgn0004244	Resistant to dieldrin	Rdl
+FBgn0004370	FBgn0004370	Protein tyrosine phosphatase 10D	Ptp10D
+FBgn0004419	FBgn0004419	maternal expression at 31B	me31B
+FBgn0004516	FBgn0004516	Glutamic acid decarboxylase 1	Gad1
+FBgn0004575	FBgn0004575	Synapsin	Syn
+FBgn0004638	FBgn0004638	downstream of receptor kinase	drk
+FBgn0004647	FBgn0004647	Notch	N
+FBgn0004648	FBgn0004648	silver	svr
+FBgn0004662	FBgn0004662	mushroom body deranged	mbd
+FBgn0004837	FBgn0004837	Suppressor of Hairless	Su(H)
+FBgn0004864	FBgn0004864	hopscotch	hop
+FBgn0004907	FBgn0004907	14-3-3zeta	14-3-3zeta
+FBgn0004956	FBgn0004956	unpaired 1	upd1
+FBgn0005564	FBgn0005564	Shaker cognate l	Shal
+FBgn0005654	FBgn0005654	Origin recognition complex subunit 3	Orc3
+FBgn0005672	FBgn0005672	spitz	spi
+FBgn0010015	FBgn0010015	Calcineurin A1	CanA1
+FBgn0010329	FBgn0010329	Tyramine beta hydroxylase	Tbh
+FBgn0010333	FBgn0010333	Rac1	Rac1
+FBgn0010399	FBgn0010399	NMDA receptor 1	Nmdar1
+FBgn0010762	FBgn0010762	simjang	simj
+FBgn0011582	FBgn0011582	Dopamine 1-like receptor 1	Dop1R1
+FBgn0011768	FBgn0011768	Formaldehyde dehydrogenase	Fdh
+FBgn0013334	FBgn0013334	Synapse-associated protein 47kD	Sap47
+FBgn0013759	FBgn0013759	CASK	CASK
+FBgn0014141	FBgn0014141	cheerio	cher
+FBgn0015269	FBgn0015269	Neurofibromin 1	Nf1
+FBgn0015380	FBgn0015380	derailed	drl
+FBgn0016917	FBgn0016917	Signal-transducer and activator of transcription protein at 92E	Stat92E
+FBgn0017590	FBgn0017590	klingon	klg
+FBgn0019985	FBgn0019985	metabotropic Glutamate Receptor	mGluR
+FBgn0022349	FBgn0022349	-	CG1910
+FBgn0023023	FBgn0023023	Collapsin Response Mediator Protein	CRMP
+FBgn0023479	FBgn0023479	Tequila	teq
+FBgn0024248	FBgn0024248	chico	chico
+FBgn0024944	FBgn0024944	Octopamine receptor in mushroom bodies	Oamb
+FBgn0026079	FBgn0026079	NOP2-Sun domain family, member 2	Nsun2
+FBgn0026401	FBgn0026401	Nipped-B	Nipped-B
+FBgn0027106	FBgn0027106	Innexin 7	Inx7
+FBgn0027107	FBgn0027107	Innexin 6	Inx6
+FBgn0028397	FBgn0028397	Transducer of ERBB2	Tob
+FBgn0028509	FBgn0028509	Centaurin gamma 1A	CenG1A
+FBgn0028734	FBgn0028734	Fmr1	Fmr1
+FBgn0029095	FBgn0029095	arouser	aru
+FBgn0029891	FBgn0029891	PTEN-induced putative kinase 1	Pink1
+FBgn0030412	FBgn0030412	Tomosyn	Tomosyn
+FBgn0030600	FBgn0030600	highwire	hiw
+FBgn0030603	FBgn0030603	-	CG5541
+FBgn0030812	FBgn0030812	wacky	wcy
+FBgn0031855	FBgn0031855	meng-po	meng
+FBgn0031893	FBgn0031893	Mitochondrial calcium uptake 1	MICU1
+FBgn0034443	FBgn0034443	crammer	cer
+FBgn0035016	FBgn0035016	-	CG4612
+FBgn0035538	FBgn0035538	Dopamine/Ecdysteroid receptor	DopEcR
+FBgn0035770	FBgn0035770	pastrel	pst
+FBgn0036819	FBgn0036819	Dysbindin	Dysb
+FBgn0036896	FBgn0036896	wallenda	wnd
+FBgn0037140	FBgn0037140	SLC22A family member	SLC22A
+FBgn0037671	FBgn0037671	ATPase H+ transporting accessory protein 2	ATP6AP2
+FBgn0037705	FBgn0037705	murashka	mura
+FBgn0037913	FBgn0037913	fatty acid binding protein	fabp
+FBgn0038934	FBgn0038934	GLD2 poly(A) polymerase	Gld2
+FBgn0038975	FBgn0038975	Neurexin 1	Nrx-1
+FBgn0039270	FBgn0039270	Poly-glutamine tract binding protein 1	PQBP1
+FBgn0039560	FBgn0039560	Biorientation Defective 1	BOD1
+FBgn0039747	FBgn0039747	Adenosine receptor	AdoR
+FBgn0040285	FBgn0040285	Scamp	Scamp
+FBgn0040372	FBgn0040372	G9a	G9a
+FBgn0040505	FBgn0040505	Anaplastic lymphoma kinase	Alk
+FBgn0041111	FBgn0041111	lilliputian	lilli
+FBgn0041164	FBgn0041164	armitage	armi
+FBgn0041184	FBgn0041184	Suppressor of cytokine signaling at 36E	Socs36E
+FBgn0041188	FBgn0041188	Ataxin-2	Atx2
+FBgn0041210	FBgn0041210	Histone deacetylase 4	HDAC4
+FBgn0042185	FBgn0042185	Mitochondrial calcium uniporter	MCU
+FBgn0043005	FBgn0043005	portabella	prt
+FBgn0043903	FBgn0043903	domeless	dome
+FBgn0045823	FBgn0045823	visgun	vsg
+FBgn0046114	FBgn0046114	Glutamate-cysteine ligase modifier subunit	Gclm
+FBgn0050077	FBgn0050077	Biogenesis of lysosome-related organelles complex 1, subunit 1	Blos1
+FBgn0051148	FBgn0051148	Glucocerebrosidase 1a	Gba1a
+FBgn0051414	FBgn0051414	Glucocerebrosidase 1b	Gba1b
+FBgn0052062	FBgn0052062	RNA-binding Fox protein 1	Rbfox1
+FBgn0052179	FBgn0052179	Keren	Krn
+FBgn0052594	FBgn0052594	ben	be
+FBgn0053207	FBgn0053207	pxb	pxb
+FBgn0053513	FBgn0053513	NMDA receptor 2	Nmdar2
+FBgn0053517	FBgn0053517	Dopamine 2-like receptor	Dop2R
+FBgn0061469	FBgn0061469	Ubiquitin protein ligase E3A	Ube3a
+FBgn0066324	FBgn0066324	toi	toi
+FBgn0066330	FBgn0066330	rafael	rafl
+FBgn0067779	FBgn0067779	debra	dbr
+FBgn0086370	FBgn0086370	sarah	sra
+FBgn0086711	FBgn0086711	moladietz	mol
+FBgn0086782	FBgn0086782	amnesiac	amn
+FBgn0086912	FBgn0086912	mushroom body miniature	mbm
+FBgn0250753	FBgn0250753	krasavietz	kra
+FBgn0250823	FBgn0250823	gilgamesh	gish
+FBgn0259108	FBgn0259108	futsch	futsch
+FBgn0259168	FBgn0259168	minibrain	mnb
+FBgn0259243	FBgn0259243	Protein kinase, cAMP-dependent, regulatory subunit type 1	Pka-R1
+FBgn0259246	FBgn0259246	bruchpilot	brp
+FBgn0259481	FBgn0259481	Mob2	Mob2
+FBgn0260793	FBgn0260793	2mit	2mit
+FBgn0261673	FBgn0261673	no extended memory	nemy
+FBgn0261788	FBgn0261788	Ankyrin 2	Ank2
+FBgn0261854	FBgn0261854	atypical protein kinase C	aPKC
+FBgn0261934	FBgn0261934	dikar	dikar
+FBgn0262266	FBgn0262266	mir-980 stem loop	mir-980
+FBgn0262477	FBgn0262477	Forkhead box P	FoxP
+FBgn0262733	FBgn0262733	Src oncogene at 64B	Src64B
+FBgn0262739	FBgn0262739	Argonaute-1	AGO1
+FBgn0262866	FBgn0262866	Ribosomal protein S6 kinase II	S6kII
+FBgn0263289	FBgn0263289	scribble	scrib
+FBgn0263490	FBgn0263490	molting defective	mld
+FBgn0263859	FBgn0263859	P95	P95
+FBgn0263860	FBgn0263860	P171	P171
+FBgn0263916	FBgn0263916	Equilibrative nucleoside transporter 2	Ent2
+FBgn0263987	FBgn0263987	spoonbill	spoon
+FBgn0264307	FBgn0264307	orb2	orb2
+FBgn0264607	FBgn0264607	Calcium/calmodulin-dependent protein kinase II	CaMKII
+FBgn0264753	FBgn0264753	Rad, Gem/Kir family member 1	Rgk1
+FBgn0265597	FBgn0265597	radish	rad
+FBgn0265784	FBgn0265784	Cyclic-AMP response element binding protein B	CrebB
+FBgn0266076	FBgn0266076	mir-276a stem loop	mir-276a
+FBgn0266098	FBgn0266098	rugose	rg
+FBgn0266557	FBgn0266557	kismet	kis
+FBgn0266572	FBgn0266572	ellipsoid body open	ebo
+FBgn0266708	FBgn0266708	Centrosomal protein 89kDa	Cep89
+FBgn0267366	FBgn0267366	milkah	mil
+FBgn0283509	FBgn0283509	Peptidylglycine-alpha-hydroxylating monooxygenase	Phm
+FBgn0284084	FBgn0284084	wingless	wg
+FBgn0284249	FBgn0284249	Adh transcription factor 1	Adf1
+FBgn0284421	FBgn0284421	Presenilin	Psn
+FBgn0286567	FBgn0286567	gryzun	gry
+FBgn0286785	FBgn0286785	scab	scb
