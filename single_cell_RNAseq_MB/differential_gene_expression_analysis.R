@@ -4,14 +4,17 @@
 
 ################################# LOAD DATA #################################
 library(DESeq2)
+library(vsn)
+library(ggplot2)
+
 # Set path
 setwd("~/Desktop/Lab/git/genetic_link_metabolism_neurodegeneration/single_cell_RNAseq_MB/data")
-# Load preprocessed counts data (all genes and all samples)
+# Load preprocessed counts data (cognition genes and neuron samples for the moment)
 readcounts_all_genes <- read.delim("processed_read_counts_cognition.txt", row.names="genes")
 # Load all CPM corrected and normalized transcription data
-normalized_data_all_genes <- read.delim("GSE74989_NormalizedCPMcorrectedData.txt", row.names="genes")
+#normalized_data_all_genes <- read.delim("GSE74989_NormalizedCPMcorrectedData.txt", row.names="genes")
 # Load preprocessed cognition data
-normalized_data_cognition_genes <- read.delim("cognition_expression_data.txt", row.names="genes")
+#normalized_data_cognition_genes <- read.delim("cognition_expression_data.txt", row.names="genes")
 
 
 # Make a data.frame with meta-data where row.names should match the individual sample names
@@ -60,9 +63,43 @@ boxplot(counts.sf_normalized, notch = TRUE,
 boxplot(log.norm.counts, notch = TRUE,
         main = "log2-transformed read counts",
         ylab = "log2(read counts)")
+#### -> We can see here that the log2 distribution representation (transformed counts) is 
+####   far more simpler to visualize
+
+# Many statistical tests and analyses assume that data is homoskedastic -> check data homoskedasticity:
+msd_plot <- meanSdPlot(log.norm.counts,
+                       ranks=FALSE, # show the data on the original scale plot = FALSE)
+                       plot = FALSE)
+msd_plot$gg + ggtitle("sequencing depth normalized log2(read counts)") + ylab("standard deviation")
+#### -> Here there is a dependence of the variance on the mean, which violates the assumption of homoskedasticity.
+
+# Variance shrinkage to reduce the amount of heteroskedasticity
+# Obtain regularized log-transformed values: rlog() function returns values that are both normalized for sequencing depth
+# and transformed to the log2 scale where the values are adjusted to fit the experiment-wide trend of the variance-mean
+# relation-ship
+DESeq.rlog <- rlog(DESeq.ds, blind = TRUE)
+rlog.norm.counts <- assay(DESeq.rlog)
+
+# Mean-sd plot for rlog-transformed data
+msd_plot <- meanSdPlot(rlog.norm.counts, ranks=FALSE, # show the data on the original scale plot = FALSE)
+                       plot = FALSE)
+msd_plot$gg + ggtitle("rlog-transformed read counts") + ylab("standard deviation")
+#### even worse results?????
 
 
+##### Determine whether samples display greater variability between experimental conditions than between replicates
+# Unsupervised hierarchical clustering to check the similarity between replicates
+distance.m_rlog <- as.dist(1 - cor(rlog.norm.counts, method = "pearson" ))
+plot( hclust(distance.m_rlog), labels = colnames(rlog.norm.counts),
+      main = "rlog transformed read counts\ndistance: Pearson correlation")
 
+# PCA
+P <- plotPCA(DESeq.rlog)
+P <- P + theme_bw() + ggtitle("Rlog transformed counts")
+print(P)
+
+
+################################# DGE Analysis #################################
 str(colData(DESeq.ds)$condition)
 colData(DESeq.ds)$condition <- relevel(colData(DESeq.ds)$condition , "DAL")
 DESeq.ds <- DESeq(DESeq.ds)
