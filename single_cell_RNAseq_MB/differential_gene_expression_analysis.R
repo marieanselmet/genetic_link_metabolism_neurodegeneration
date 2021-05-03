@@ -6,6 +6,7 @@
 library(DESeq2)
 library(vsn)
 library(ggplot2)
+library(NMF)
 
 # Set path
 setwd("~/Desktop/Lab/git/genetic_link_metabolism_neurodegeneration/single_cell_RNAseq_MB/data")
@@ -100,9 +101,44 @@ print(P)
 
 
 ################################# DGE Analysis #################################
-str(colData(DESeq.ds)$condition)
+str(colData(DESeq.ds)$condition) # factor with 7 levels -> 7 cell types
+# Set DAL as the first -level -factor
 colData(DESeq.ds)$condition <- relevel(colData(DESeq.ds)$condition , "DAL")
+# Run the DGE analysis
 DESeq.ds <- DESeq(DESeq.ds)
+# Results
 DGE.results <- results(DESeq.ds, independentFiltering = TRUE, alpha = 0.05)
 summary(DGE.results)
+# Put the DESeq results in a data.frame object
 head(DGE.results)
+table(DGE.results$padj < 0.05)
+rownames(subset(DGE.results , padj < 0.05)) # list of significative (after correction) diffentially expressed genes
+
+# Histogram distribution of the obtained p-values
+hist(DGE.results$pvalue ,
+     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
+# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
+plotMA(DGE.results, alpha = 0.05, main = "WT vs. SNF2 mutants", ylim = c(-4,4))
+
+### Heatmaps ###
+# Sort the results according to the adjusted p-value
+DGE.results.sorted <- DGE.results[order(DGE.results$padj), ]
+# Genes under the desired adjusted p-value significance threshold
+DGEgenes <- rownames(subset(DGE.results.sorted, padj < 0.05))
+# Extract the normalized read counts for DE genes into a matrix (aheatmap needs a matrix of values)
+hm.mat_DGEgenes <- log.norm.counts[DGEgenes , ]
+aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap with sorted p-values
+# Combine the heatmap with hierarchical clustering
+png("rplot.jpg", width = 350, height = "350", units = "px")
+aheatmap(hm.mat_DGEgenes ,
+         Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
+         distfun = "euclidean", hclustfun = "average")
+dev.off()
+# Scale the read counts per gene to emphasize the sample-type-specific differences
+aheatmap(hm.mat_DGEgenes ,
+         Rowv = TRUE , Colv = TRUE ,
+         distfun = "euclidean", hclustfun = "average",
+         scale = "row") # values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
+
+
+
