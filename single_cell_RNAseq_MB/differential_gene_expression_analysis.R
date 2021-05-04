@@ -3,10 +3,13 @@
 #########################################################################################################
 
 ################################# LOAD DATA #################################
+# Load libraries
 library(DESeq2)
 library(vsn)
 library(ggplot2)
 library(NMF)
+library(edgeR)
+
 
 # Set path
 setwd("~/Desktop/Lab/git/genetic_link_metabolism_neurodegeneration/single_cell_RNAseq_MB/data")
@@ -101,24 +104,38 @@ print(P)
 
 
 ################################# DGE Analysis #################################
+####### DESeq #######
 str(colData(DESeq.ds)$condition) # factor with 7 levels -> 7 cell types
+
 # Set DAL as the first -level -factor
-colData(DESeq.ds)$condition <- relevel(colData(DESeq.ds)$condition , "DAL")
+colData(DESeq.ds)$condition <- relevel(colData(DESeq.ds)$condition, "DAL")
+model_matrix <- model.matrix(~colData(DESeq.ds)$condition)
+print(model_matrix)
+
+# DAL vs V2
 # Run the DGE analysis
 DESeq.ds <- DESeq(DESeq.ds)
-# Results
-DGE.results <- results(DESeq.ds, independentFiltering = TRUE, alpha = 0.05)
+resultsNames(DESeq.ds)
+# Walt test
+DGE.results <- results(DESeq.ds, contrast=c("condition","DAL","V2"), alpha = 0.05)
 summary(DGE.results)
+print(DGE.results)
+
+# LRT test
+#dds <- DESeq(DESeq.ds, test="LRT", reduced=~1)
+#res <- results(dds)
+#summary(res)
+#print(res)
+
 # Put the DESeq results in a data.frame object
-head(DGE.results)
 table(DGE.results$padj < 0.05)
-rownames(subset(DGE.results , padj < 0.05)) # list of significative (after correction) diffentially expressed genes
+rownames(subset(DGE.results, padj < 0.05)) # list of significative (after correction) diffentially expressed genes
 
 # Histogram distribution of the obtained p-values
 hist(DGE.results$pvalue ,
      col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
 # MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
-plotMA(DGE.results, alpha = 0.05, main = "WT vs. SNF2 mutants", ylim = c(-4,4))
+plotMA(DGE.results, alpha = 0.05, main = "DAL vs. V2")
 
 ### Heatmaps ###
 # Sort the results according to the adjusted p-value
@@ -130,7 +147,7 @@ hm.mat_DGEgenes <- log.norm.counts[DGEgenes , ]
 aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap with sorted p-values
 # Combine the heatmap with hierarchical clustering
 png("rplot.jpg", width = 350, height = "350", units = "px")
-aheatmap(hm.mat_DGEgenes ,
+aheatmap(hm.mat_DGEgenes,
          Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
          distfun = "euclidean", hclustfun = "average")
 dev.off()
@@ -142,3 +159,10 @@ aheatmap(hm.mat_DGEgenes ,
 
 
 
+################# TO DO AFTER, pb when compiling edgeR.DGEList:
+####### edgeR #######
+# edgeR requires a matrix of read counts where the row names = gene IDs and the column names = sample IDs
+sample_info.edger <- factor (c(rep("DAL", 10), rep("V2", 10)))
+sample_info.edger <- relevel(sample_info.edger, ref = "DAL")
+# Convert the matrix to an edgeR object
+edgeR.DGElist <- DGEList(counts = readcounts_all_genes, group = sample_info)
