@@ -14,7 +14,7 @@ library(edgeR)
 # Set path
 setwd("~/Desktop/Lab/git/genetic_link_metabolism_neurodegeneration/single_cell_RNAseq_MB/data")
 # Load preprocessed counts data (cognition genes and neuron samples for the moment)
-readcounts_all_genes <- read.delim("processed_read_counts_cognition.txt", row.names="genes")
+readcounts_cognition_genes <- read.delim("processed_read_counts_cognition.txt", row.names="genes")
 # Load all CPM corrected and normalized transcription data
 #normalized_data_all_genes <- read.delim("GSE74989_NormalizedCPMcorrectedData.txt", row.names="genes")
 # Load preprocessed cognition data
@@ -22,14 +22,14 @@ readcounts_all_genes <- read.delim("processed_read_counts_cognition.txt", row.na
 
 
 # Make a data.frame with meta-data where row.names should match the individual sample names
-sample_info <- data.frame(condition = gsub("_[0-9]+", "", names(readcounts_all_genes)), 
-                          row.names = names(readcounts_all_genes) )
+sample_info <- data.frame(condition = gsub("_[0-9]+", "", names(readcounts_cognition_genes)), 
+                          row.names = names(readcounts_cognition_genes) )
 names(sample_info) <- "condition" # rename column as "condition"
 
 
 ################################# DATA NORMALIZATION #################################
 # Generate the DESeq DataSet
-DESeq.ds <- DESeqDataSetFromMatrix(countData = readcounts_all_genes, colData = sample_info,
+DESeq.ds <- DESeqDataSetFromMatrix(countData = readcounts_cognition_genes, colData = sample_info,
                                    design = ~ condition)
 # Check the DESeq object:
 colData(DESeq.ds) %>% head
@@ -159,10 +159,10 @@ aheatmap(hm.mat_DGEgenes ,
 
 
 
-################# TO DO AFTER, pb when compiling edgeR.DGEList:
+################# 
 ####### edgeR #######
 # edgeR requires a matrix of read counts where the row names = gene IDs and the column names = sample IDs
 sample_info.edger <- factor (c(rep("DAL", 10), rep("V2", 10)))
 sample_info.edger <- relevel(sample_info.edger, ref = "DAL")
 # Convert the matrix to an edgeR object
-edgeR.DGElist <- DGEList(counts = readcounts_all_genes, group = sample_info)
+edgeR.DGElist <- DGEList(counts = readcounts_cognition_genes, group = sample_info) # why an error? same number of columns and rows yet??
