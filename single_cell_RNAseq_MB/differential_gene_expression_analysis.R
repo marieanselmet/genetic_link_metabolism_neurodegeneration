@@ -108,7 +108,6 @@ lfc.cutoff <- 0.58 # Corresponds to a fold change of ~1.5
 # 1) First perform a LRT test to check if there is any difference when the neuron type is included or not in the model while
 # controling for the treatment (paired and unpaired)
 # -> identify any genes that show changes in expression across one of the 7 neuron types based on the neuron type only
-
 LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE, heatmaps=FALSE)
 {
   ### Perform LRT test 
@@ -143,7 +142,6 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
     dev.off()
   }
   
-  
   # Boxplot of expression
   if (histo_log2FoldChange) {
     pdf("DESeq_results/LRT/histo_log2FoldChange.pdf")
@@ -158,7 +156,6 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
   if (heatmaps) {
     pdf("DESeq_results/LRT/heatmap_sorted_padj.pdf")
     sorted_padj <- res_LRT_thresh[order(res_LRT_thresh$padj), ]
-    print(sorted_padj)
     hm.mat_DGEgenes <- log.norm.counts[sorted_padj$gene, ] # Extract the normalized read counts for significantly DE genes into a matrix (aheatmap needs a matrix of values)
     aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap of log norm gene counts with sorted p-values (most significant genes at the top)
     dev.off()
@@ -186,50 +183,101 @@ print(res_LRT)
 # 2) Then perform LRT tests to check if there is any difference between one cell type and the mean of all neurons
 # -> identify any genes that show change in expression between one specific cell type and the mean of neurons
 dds_mean <- DESeq.ds
-design(dds_mean) <- ~ treatment + neuron_type
+design(dds_mean) <- ~ neuron_type
 dds_mean <- DESeq(dds_mean, betaPrior = TRUE)
 print(resultsNames(dds_mean))
 
-LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, file_name)
+# Compares mean vs one specified neuron type and writes the significant results in an xlsx file
+LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, path, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE, heatmaps=FALSE)
 {
-  # Compares mean vs one specified neuron type and writes the significant results in an xlsx file
-  res_mean <- results(data, contrast=c(1,0,0,0,0,0,0))
-  print(res_mean)
-  res_mean$threshold <- as.logical(res_mean$padj < padj.cutoff) 
+  ### Compares mean vs one specified neuron type and writes the significant results in an xlsx file
+  res_mean_viz <- results(data, contrast=contrast_list, tidy=FALSE)
+  res_mean <- results(data, contrast=contrast_list, tidy=TRUE)
+  colnames(res_mean)[1] <- "gene"
+  
+  res_mean_viz$threshold <- as.logical(res_mean_viz$padj < padj.cutoff) 
+  res_mean$threshold <- as.logical(res_mean$padj < padj.cutoff)
   res_mean_df <- data.frame(res_mean)
+  res_mean_df <-  res_mean_df[complete.cases(res_mean_df), ]
   res_mean_thresh <- subset(res_mean_df, threshold == TRUE)
-  write_xlsx(res_mean_thresh[,1:6], file_name)
-  return(res_mean_df)
+  
+  ### Visualize results
+  # Histogram distribution of the obtained p-values
+  if (histogram_p_values) {
+    pdf(paste(path, "histogram_p_values.pdf",sep="/"))
+    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    hist(res_mean_viz$pvalue ,
+         col = "blue", border = "white", xlab = "", ylab = "", main = "Frequencies of p-values")
+    dev.off()
+  }
+  
+  # MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
+  if (MA_plot) {
+    pdf(paste(path, "MA_plot.pdf",sep="/"))
+    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    plotMA(res_mean_viz, alpha = 0.05, main = "Full model vs. reduced model")  # shrink the log2 fold changes? -> Seems not necessary for the moment
+    dev.off()
+  }
+  
+  # Boxplot of expression
+  if (histo_log2FoldChange) {
+    pdf(paste(path, "histo_log2FoldChange.pdf",sep="/"))
+    par(mar = c(6.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    sorted_LFC <- res_mean_thresh[order(res_mean_thresh$log2FoldChange),]
+    #### REGLER PB DE X-TICKS (TAILLE)
+    barplot(sorted_LFC$log2FoldChange, main="log2FoldChange", xlab = "", ylab = "log2FoldChange", horiz=FALSE, names.arg=sorted_LFC$gene, col="#69b3a2", las=2, cex.axis=0.5)
+    dev.off()
+  }
+  
+  # Heatmaps 
+  if (heatmaps) {
+    pdf(paste(path, "heatmap_sorted_padj.pdf",sep="/"))
+    sorted_padj <- res_mean_thresh[order(res_mean_thresh$padj), ]
+    hm.mat_DGEgenes <- log.norm.counts[sorted_padj$gene, ] # Extract the normalized read counts for significantly DE genes into a matrix (aheatmap needs a matrix of values)
+    aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap of log norm gene counts with sorted p-values (most significant genes at the top)
+    dev.off()
+    
+    # Combine the heatmap with hierarchical clustering
+    pdf(paste(path, "heatmap_clustering.pdf",sep="/"))
+    aheatmap(hm.mat_DGEgenes, Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
+             distfun = "euclidean", hclustfun = "average", scale = "row") # Scale the read counts per gene to emphasize the sample-type-specific differences
+    # -> values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
+    dev.off()
+  }
+  
+  ### Save and return results
+  write_xlsx(res_mean_thresh[,1:6], paste(path, "res_mean.xlsx",sep="/")) # Save results of significant genes in an xlsx file
+  return(res_mean_viz) # Return all genes (significant and non significant) results 
+  
 }
 
-
 # DAL vs mean:
-res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,0,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_DAL.xlsx")
-#Histogram distribution of the obtained p-values
-hist(res_mean_DAL$pvalue ,
-     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
-# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
-plotMA(res_mean_DAL, alpha = 0.05, main = "DAL vs. V2")  # shrink the log2 fold changes?
-
-# Boxplot of expression
-
+res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,0,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
+                                 TRUE, TRUE, TRUE, TRUE)
+                                 
 # V2 vs mean:
-res_mean_V2 <- LRT_test_vs_mean(dds_mean, c(0,0,1,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_V2.xlsx")
+res_mean_V2 <- LRT_test_vs_mean(dds_mean, c(0,0,1,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V2", 
+                                TRUE, TRUE, TRUE, TRUE)
 
 # AB_KCs vs mean:
-res_mean_AB_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,1,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_AB_KCs.xlsx")
+res_mean_AB_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,1,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/AB_KCs", 
+                                    TRUE, TRUE, TRUE, TRUE)
 
 # G_KCs vs mean:
-res_mean_G_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,1,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_G_KCs.xlsx")
+res_mean_G_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,1,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G_KCs", 
+                                   TRUE, TRUE, TRUE, TRUE)
 
 # V3 vs mean:
-res_mean_V3 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,1,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_V3.xlsx")
+res_mean_V3 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,1,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V3", 
+                                TRUE, TRUE, TRUE, TRUE)
 
 # R27 vs mean:
-res_mean_R27 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,1,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_R27.xlsx")
+res_mean_R27 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,1,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/R27", 
+                                 TRUE, TRUE, TRUE, TRUE)
 
 # G386 vs mean:
-res_mean_G386 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,0,1), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_G386.xlsx")
+res_mean_G386 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,0,1), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G386", 
+                                  TRUE, TRUE, TRUE, TRUE)
 
 
 
@@ -239,7 +287,7 @@ Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cuto
   # Compares mean vs one specified neuron type and writes the significant results in an xlsx file
   dds_Wald <- data
   colData(dds_Wald)$neuron_type <- relevel(colData(dds_Wald)$neuron_type, reference_type)
-  design(dds_Wald) <- ~ 1 + rep + neuron_type   ### include rep? -> 3 beta values do not converge in this case
+  design(dds_Wald) <- ~ neuron_type   
   dds_Wald <- DESeq(dds_Wald) # Wald test
   res_Wald <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald")
   print(res_Wald)
@@ -309,40 +357,17 @@ res_G386_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "G386", padj.cutoff, lfc.cutoff, 
 res_G386_R27 <- Wald_test(DESeq.ds, "R27", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/res_G386_R27.xlsx")
 
 
-############################ Diagnostic plots ############################
 
 
-# Put the DESeq results in a data.frame object
-#table(DGE.results$padj < 0.05)
-#rownames(subset(DGE.results, padj < 0.05)) # list of significative (after correction) diffentially expressed genes
-
-# Histogram distribution of the obtained p-values
-hist(DGE.results$pvalue ,
-     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
-# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
-plotMA(DGE.results, alpha = 0.05, main = "DAL vs. V2")
-
-### Heatmaps ###
-# Sort the results according to the adjusted p-value
-DGE.results.sorted <- DGE.results[order(DGE.results$padj), ]
-# Genes under the desired adjusted p-value significance threshold
-DGEgenes <- rownames(subset(DGE.results.sorted, padj < 0.05))
-# Extract the normalized read counts for DE genes into a matrix (aheatmap needs a matrix of values)
-hm.mat_DGEgenes <- log.norm.counts[DGEgenes , ]
-aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap with sorted p-values
-# Combine the heatmap with hierarchical clustering
-png("rplot.jpg", width = 350, height = "350", units = "px")
-aheatmap(hm.mat_DGEgenes,
-         Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
-         distfun = "euclidean", hclustfun = "average")
-dev.off()
-# Scale the read counts per gene to emphasize the sample-type-specific differences
-aheatmap(hm.mat_DGEgenes ,
-         Rowv = TRUE , Colv = TRUE ,
-         distfun = "euclidean", hclustfun = "average",
-         scale = "row") # values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
-
-
-
-
-
+LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, file_name)
+{
+  # Compares mean vs one specified neuron type and writes the significant results in an xlsx file
+  res_mean <- results(data, contrast=contrast_list, tidy=TRUE)
+  print(res_mean)
+  res_mean$threshold <- as.logical(res_mean$padj < padj.cutoff) 
+  res_mean_df <- data.frame(res_mean)
+  res_mean_df <-  res_mean_df[complete.cases(res_mean_df), ]
+  res_mean_thresh <- subset(res_mean_df, threshold == TRUE)
+  write_xlsx(res_mean_thresh[,1:6], file_name)
+  return(res_mean_df)
+}
