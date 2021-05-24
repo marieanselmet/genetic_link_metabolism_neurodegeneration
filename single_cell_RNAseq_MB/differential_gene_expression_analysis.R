@@ -166,7 +166,8 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
     # Combine the heatmap with hierarchical clustering
     pdf("DESeq_results/LRT/heatmap_clustering.pdf")
     aheatmap(hm.mat_DGEgenes, Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
-             distfun = "euclidean", hclustfun = "average")
+             distfun = "euclidean", hclustfun = "average", scale = "row") # Scale the read counts per gene to emphasize the sample-type-specific differences
+    # -> values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
     dev.off()
   }
 
@@ -180,29 +181,6 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
 res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE)
 print(res_LRT)
 
-
-
-
-
-### Heatmaps ###
-# Sort the results according to the adjusted p-value
-DGE.results.sorted <- DGE.results[order(DGE.results$padj), ]
-# Genes under the desired adjusted p-value significance threshold
-DGEgenes <- rownames(subset(DGE.results.sorted, padj < 0.05))
-# Extract the normalized read counts for DE genes into a matrix (aheatmap needs a matrix of values)
-hm.mat_DGEgenes <- log.norm.counts[DGEgenes , ]
-aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap with sorted p-values
-# Combine the heatmap with hierarchical clustering
-png("rplot.jpg", width = 350, height = "350", units = "px")
-aheatmap(hm.mat_DGEgenes,
-         Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
-         distfun = "euclidean", hclustfun = "average")
-dev.off()
-# Scale the read counts per gene to emphasize the sample-type-specific differences
-aheatmap(hm.mat_DGEgenes,
-         Rowv = TRUE , Colv = TRUE ,
-         distfun = "euclidean", hclustfun = "average",
-         scale = "row") # values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
 
 
 # 2) Then perform LRT tests to check if there is any difference between one cell type and the mean of all neurons
