@@ -9,6 +9,7 @@ library(vsn)
 library(ggplot2)
 library(NMF)
 library(writexl)
+library(data.table)
 
 # Set path
 setwd("~/Desktop/Lab/git/genetic_link_metabolism_neurodegeneration/single_cell_RNAseq_MB/data")
@@ -19,15 +20,22 @@ readcounts_cognition_genes <- read.delim("processed_read_counts_cognition.txt", 
 sample_info <- data.frame(neuron_type = gsub("_[0-9]+", "", names(readcounts_cognition_genes)), 
                           row.names = names(readcounts_cognition_genes))
 sample_info$neuron_type <- as.factor(sample_info$neuron_type) # make the condition a factor
-rep_ <- c(rep(1:10, times=3, each=1), rep(1:12, times=1, each=1), rep(1:10, times=1, each=1), rep(1:8, times=1, each=1), rep(1:10, times=1, each=1))
-sample_info$rep <- rep_
+treatment_ <- c(rep("paired", times=5, each=1), rep("unpaired", times=5, each=1), rep("paired", times=5, each=1), rep("unpaired", times=5, each=1), 
+                rep("paired", times=5, each=1), rep("unpaired", times=5, each=1), rep("paired", times=6, each=1), rep("unpaired", times=6, each=1),
+                rep("paired", times=5, each=1), rep("unpaired", times=5, each=1), rep("paired", times=4, each=1), rep("unpaired", times=4, each=1),
+                rep("paired", times=5, each=1), rep("unpaired", times=5, each=1))
+sample_info$treatment <- as.factor(treatment_)
+
+
+#rep_ <- c(rep(1:10, times=3, each=1), rep(1:12, times=1, each=1), rep(1:10, times=1, each=1), rep(1:8, times=1, each=1), rep(1:10, times=1, each=1))
+#sample_info$rep <- rep_
 #batch_ <- c(rep(1:3, times=1, each=10), rep(4, times=1, each=12), rep(5, times=1, each=10), rep(6, times=1, each=8), rep(7, times=1, each=10))
 #sample_info$batch <- batch_
 
 ################################# DATA NORMALIZATION #################################
 # Generate the DESeq DataSet
 DESeq.ds <- DESeqDataSetFromMatrix(countData = readcounts_cognition_genes, colData = sample_info,
-                                   design = ~ neuron_type)
+                                   design = ~ treatment + neuron_type )
 # Check the DESeq object
 colData(DESeq.ds) %>% head
 assay(DESeq.ds, "counts") %>% head
@@ -97,7 +105,7 @@ plot(hclust(distance.m_rlog), labels = colnames(rlog.norm.counts),
 # PCA
 P <- plotPCA(DESeq.rlog,intgroup=c("neuron_type","sizeFactor"))
 P <- P + theme_bw() + ggtitle("Rlog transformed counts") +  theme(legend.position = "none") 
-print(P) ## Am??liorer ce plot
+print(P) ## Améliorer ce plot
 
 
 ################################# DGE Analysis #################################
@@ -115,26 +123,63 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff)
 {
   # Performs the LRT test and writes the significant results in an xlsx file
   dds_LRT <- data
-  design(dds_LRT) <- ~ 1 + neuron_type   ### include rep? -> 3 beta values do not converge in this case
-  dds_LRT <- DESeq(dds_LRT, test="LRT", full = design(dds_LRT), reduced = ~ 1) # LRT test
-  res_LRT <- results(dds_LRT, test="LRT") # Result table
-  print(res_LRT)
+  design(dds_LRT) <- ~ treatment + neuron_type # you want to control for the treatment to only see the effect of neuron_type
+  dds_LRT <- DESeq(dds_LRT, test="LRT", full = design(dds_LRT), reduced = ~ treatment) # LRT test
+  res_LRT_viz <- results(dds_LRT, test="LRT", tidy = FALSE) # Result table for vizualisation
+  res_LRT <- results(dds_LRT, test="LRT", tidy = TRUE) # Create an other result table with gene names as a column for saving in an xlsx file (tidy=TRUE)
+  colnames(res_LRT)[1] <- "gene"
   
-  length(which(res_LRT$padj < padj.cutoff)) 
-  res_LRT$threshold <- as.logical(res_LRT$padj < padj.cutoff) # Column to denote which genes are significant
+  res_LRT_viz$threshold <- as.logical(res_LRT_viz$padj < padj.cutoff) # Column to denote which genes are significant
+  res_LRT$threshold <- as.logical(res_LRT$padj < padj.cutoff) 
   res_LRT_df <- data.frame(res_LRT)
-  res_LRT_thresh <- subset(res_LRT_df, threshold == TRUE)
-  write_xlsx(res_LRT_thresh[,1:6],"DESeq_results/res_LRT.xlsx")
-  return(res_LRT_df)
+  res_LRT_df <-  res_LRT_df[complete.cases(res_LRT_df), ] # Remove NA values
+  res_LRT_thresh <- subset(res_LRT_df, threshold == TRUE) # Remove non significant genes
+  
+  write_xlsx(res_LRT_thresh[,1:6],"DESeq_results/res_LRT.xlsx") # Save results of significant genes in an xlsx file
+  return(res_LRT_viz) # Return all genes (significant and non significant) results for post test analysis & visualization
 }
 
+# Call LRT test function
 res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff)
+print(res_LRT)
+
+# Histogram distribution of the obtained p-values
+hist(res_LRT$pvalue ,
+     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
+
+# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
+plotMA(res_LRT, alpha = 0.05, main = "Full model vs. reduced model")  # shrink the log2 fold changes?
+
+# Boxplot of expression
+boxplot(log2FoldChange ~ gene, data = res_LRT,  notch = TRUE,
+        main = "log2-transformed read counts",
+        ylab = "log2(read counts)", xlab = "Cells", axes=FALSE)
+
+### Heatmaps ###
+# Sort the results according to the adjusted p-value
+DGE.results.sorted <- DGE.results[order(DGE.results$padj), ]
+# Genes under the desired adjusted p-value significance threshold
+DGEgenes <- rownames(subset(DGE.results.sorted, padj < 0.05))
+# Extract the normalized read counts for DE genes into a matrix (aheatmap needs a matrix of values)
+hm.mat_DGEgenes <- log.norm.counts[DGEgenes , ]
+aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap with sorted p-values
+# Combine the heatmap with hierarchical clustering
+png("rplot.jpg", width = 350, height = "350", units = "px")
+aheatmap(hm.mat_DGEgenes,
+         Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
+         distfun = "euclidean", hclustfun = "average")
+dev.off()
+# Scale the read counts per gene to emphasize the sample-type-specific differences
+aheatmap(hm.mat_DGEgenes ,
+         Rowv = TRUE , Colv = TRUE ,
+         distfun = "euclidean", hclustfun = "average",
+         scale = "row") # values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
 
 
 # 2) Then perform LRT tests to check if there is any difference between one cell type and the mean of all neurons
 # -> identify any genes that show change in expression between one specific cell type and the mean of neurons
 dds_mean <- DESeq.ds
-design(dds_mean) <- ~ 1 + neuron_type
+design(dds_mean) <- ~ 1 + rep + neuron_type
 dds_mean <- DESeq(dds_mean, betaPrior = TRUE)
 print(resultsNames(dds_mean))
 
@@ -153,6 +198,13 @@ LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, file_
 
 # DAL vs mean:
 res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,0,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_DAL.xlsx")
+#Histogram distribution of the obtained p-values
+hist(res_mean_DAL$pvalue ,
+     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
+# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
+plotMA(res_mean_DAL, alpha = 0.05, main = "DAL vs. V2")  # shrink the log2 fold changes?
+
+# Boxplot of expression
 
 # V2 vs mean:
 res_mean_V2 <- LRT_test_vs_mean(dds_mean, c(0,0,1,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/res_mean_V2.xlsx")
@@ -174,17 +226,15 @@ res_mean_G386 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,0,1), padj.cutoff, lfc
 
 
 
-# 3) Wald test comparisons ########## DO THAT IN A FUNCTION!!!!!!!!
-
-
-Wald_test <- function(data, reference_type, compared_type, padj.cutoff, lfc.cutoff, file_name)
+# 3) Wald test comparisons 
+Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cutoff, file_name)
 {
   # Compares mean vs one specified neuron type and writes the significant results in an xlsx file
   dds_Wald <- data
   colData(dds_Wald)$neuron_type <- relevel(colData(dds_Wald)$neuron_type, reference_type)
-  design(dds_Wald) <- ~ neuron_type   ### include rep? -> 3 beta values do not converge in this case
+  design(dds_Wald) <- ~ 1 + rep + neuron_type   ### include rep? -> 3 beta values do not converge in this case
   dds_Wald <- DESeq(dds_Wald) # Wald test
-  res_Wald <- results(dds_Wald, contrast=c("neuron_type", reference_type, compared_type), alpha = padj.cutoff, test="Wald")
+  res_Wald <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald")
   print(res_Wald)
   
   res_Wald$threshold <- as.logical(res_Wald$padj < padj.cutoff) 
@@ -252,21 +302,12 @@ res_G386_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "G386", padj.cutoff, lfc.cutoff, 
 res_G386_R27 <- Wald_test(DESeq.ds, "R27", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/res_G386_R27.xlsx")
 
 
-
-
-
-
-
-
-
-
-
 ############################ Diagnostic plots ############################
 
 
 # Put the DESeq results in a data.frame object
-table(DGE.results$padj < 0.05)
-rownames(subset(DGE.results, padj < 0.05)) # list of significative (after correction) diffentially expressed genes
+#table(DGE.results$padj < 0.05)
+#rownames(subset(DGE.results, padj < 0.05)) # list of significative (after correction) diffentially expressed genes
 
 # Histogram distribution of the obtained p-values
 hist(DGE.results$pvalue ,
