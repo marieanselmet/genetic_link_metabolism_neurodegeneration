@@ -109,7 +109,7 @@ lfc.cutoff <- 0.58 # Corresponds to a fold change of ~1.5
 # controling for the treatment (paired and unpaired)
 # -> identify any genes that show changes in expression across one of the 7 neuron types based on the neuron type only
 
-LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE)
+LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE, heatmaps=FALSE)
 {
   ### Perform LRT test 
   dds_LRT <- data
@@ -147,18 +147,29 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
   # Boxplot of expression
   if (histo_log2FoldChange) {
     pdf("DESeq_results/LRT/histo_log2FoldChange.pdf")
-    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
-    sorted <- res_LRT_df[order(res_LRT_df$log2FoldChange),]
-    print(sorted)
-    #hist(log2FoldChange, data = sorted,  notch = TRUE,
-            #main = "log2FoldChange across genes",
-            #ylab = "log2FoldChange", xlab = "Genes", axes=FALSE, names=res_LRT$gene)
-    #plot(x=sorted$log2FoldChange, y=sorted$gene, xlim=c(0,150) , ylim=c(-20,20))
-    barplot(sorted$log2FoldChange, main="log2FoldChange", horiz=FALSE, names.arg=sorted$gene, col="#69b3a2", las=2, cex.axis=1.5)
+    par(mar = c(6.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    sorted_LFC <- res_LRT_thresh[order(res_LRT_thresh$log2FoldChange),]
+    #### REGLER PB DE X-TICKS (TAILLE)
+    barplot(sorted_LFC$log2FoldChange, main="log2FoldChange", xlab = "", ylab = "log2FoldChange", horiz=FALSE, names.arg=sorted_LFC$gene, col="#69b3a2", las=2, cex.axis=0.5)
+    dev.off()
+  }
+  
+  # Heatmaps 
+  if (heatmaps) {
+    pdf("DESeq_results/LRT/heatmap_sorted_padj.pdf")
+    sorted_padj <- res_LRT_thresh[order(res_LRT_thresh$padj), ]
+    print(sorted_padj)
+    hm.mat_DGEgenes <- log.norm.counts[sorted_padj$gene, ] # Extract the normalized read counts for significantly DE genes into a matrix (aheatmap needs a matrix of values)
+    aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap of log norm gene counts with sorted p-values (most significant genes at the top)
     dev.off()
     
+    # Combine the heatmap with hierarchical clustering
+    pdf("DESeq_results/LRT/heatmap_clustering.pdf")
+    aheatmap(hm.mat_DGEgenes, Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
+             distfun = "euclidean", hclustfun = "average")
+    dev.off()
   }
-  #print(res_LRT)
+
   ### Save and return results
   write_xlsx(res_LRT_thresh[,1:6],"DESeq_results/LRT/res_LRT.xlsx") # Save results of significant genes in an xlsx file
   return(res_LRT_viz) # Return all genes (significant and non significant) results 
@@ -166,7 +177,7 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
 }
 
 # Call LRT test function and visualization of DESeq analysis results
-res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE)
+res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE)
 print(res_LRT)
 
 
@@ -188,7 +199,7 @@ aheatmap(hm.mat_DGEgenes,
          distfun = "euclidean", hclustfun = "average")
 dev.off()
 # Scale the read counts per gene to emphasize the sample-type-specific differences
-aheatmap(hm.mat_DGEgenes ,
+aheatmap(hm.mat_DGEgenes,
          Rowv = TRUE , Colv = TRUE ,
          distfun = "euclidean", hclustfun = "average",
          scale = "row") # values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
@@ -197,14 +208,14 @@ aheatmap(hm.mat_DGEgenes ,
 # 2) Then perform LRT tests to check if there is any difference between one cell type and the mean of all neurons
 # -> identify any genes that show change in expression between one specific cell type and the mean of neurons
 dds_mean <- DESeq.ds
-design(dds_mean) <- ~ 1 + rep + neuron_type
+design(dds_mean) <- ~ treatment + neuron_type
 dds_mean <- DESeq(dds_mean, betaPrior = TRUE)
 print(resultsNames(dds_mean))
 
 LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, file_name)
 {
   # Compares mean vs one specified neuron type and writes the significant results in an xlsx file
-  res_mean <- results(data, contrast=c(0,1,0,0,0,0,0,0))
+  res_mean <- results(data, contrast=c(1,0,0,0,0,0,0))
   print(res_mean)
   res_mean$threshold <- as.logical(res_mean$padj < padj.cutoff) 
   res_mean_df <- data.frame(res_mean)
