@@ -27,22 +27,10 @@ treatment_ <- c(rep("paired", times=5, each=1), rep("unpaired", times=5, each=1)
 sample_info$treatment <- as.factor(treatment_)
 
 
-#rep_ <- c(rep(1:10, times=3, each=1), rep(1:12, times=1, each=1), rep(1:10, times=1, each=1), rep(1:8, times=1, each=1), rep(1:10, times=1, each=1))
-#sample_info$rep <- rep_
-#batch_ <- c(rep(1:3, times=1, each=10), rep(4, times=1, each=12), rep(5, times=1, each=10), rep(6, times=1, each=8), rep(7, times=1, each=10))
-#sample_info$batch <- batch_
-
 ################################# DATA NORMALIZATION #################################
 # Generate the DESeq DataSet
 DESeq.ds <- DESeqDataSetFromMatrix(countData = readcounts_cognition_genes, colData = sample_info,
                                    design = ~ treatment + neuron_type )
-# Check the DESeq object
-colData(DESeq.ds) %>% head
-assay(DESeq.ds, "counts") %>% head
-rowData(DESeq.ds) %>% head
-
-# Test what counts () returns
-counts(DESeq.ds) %>% str
 
 # Remove genes without any counts
 DESeq.ds <- DESeq.ds[ rowSums(counts(DESeq.ds)) > 0, ]
@@ -117,17 +105,19 @@ padj.cutoff <- 0.05
 lfc.cutoff <- 0.58 # Corresponds to a fold change of ~1.5 
 
 
-# 1) First perform a LRT test to check if there is any difference when the cell type is included or not in the model
-# -> identify any genes that show changes in expression across one of the 7 cell types
-LRT_test <- function(data, padj.cutoff, lfc.cutoff)
+# 1) First perform a LRT test to check if there is any difference when the neuron type is included or not in the model while
+# controling for the treatment (paired and unpaired)
+# -> identify any genes that show changes in expression across one of the 7 neuron types based on the neuron type only
+
+LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE)
 {
-  # Performs the LRT test and writes the significant results in an xlsx file
+  ### Perform LRT test 
   dds_LRT <- data
   design(dds_LRT) <- ~ treatment + neuron_type # you want to control for the treatment to only see the effect of neuron_type
-  dds_LRT <- DESeq(dds_LRT, test="LRT", full = design(dds_LRT), reduced = ~ treatment) # LRT test
+  dds_LRT <- DESeq(dds_LRT, test="LRT", full = design(dds_LRT), reduced = ~ treatment) # LRT test (controlling for the treatment)
   res_LRT_viz <- results(dds_LRT, test="LRT", tidy = FALSE) # Result table for vizualisation
-  res_LRT <- results(dds_LRT, test="LRT", tidy = TRUE) # Create an other result table with gene names as a column for saving in an xlsx file (tidy=TRUE)
-  colnames(res_LRT)[1] <- "gene"
+  res_LRT <- results(dds_LRT, test="LRT", tidy = TRUE) # Create an other result table with gene names as a column for saving results in an xlsx file (tidy=TRUE)
+  colnames(res_LRT)[1] <- "gene" # Gene names in the 1st column
   
   res_LRT_viz$threshold <- as.logical(res_LRT_viz$padj < padj.cutoff) # Column to denote which genes are significant
   res_LRT$threshold <- as.logical(res_LRT$padj < padj.cutoff) 
@@ -135,25 +125,53 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff)
   res_LRT_df <-  res_LRT_df[complete.cases(res_LRT_df), ] # Remove NA values
   res_LRT_thresh <- subset(res_LRT_df, threshold == TRUE) # Remove non significant genes
   
-  write_xlsx(res_LRT_thresh[,1:6],"DESeq_results/res_LRT.xlsx") # Save results of significant genes in an xlsx file
-  return(res_LRT_viz) # Return all genes (significant and non significant) results for post test analysis & visualization
+  ### Visualize results
+  # Histogram distribution of the obtained p-values
+  if (histogram_p_values) {
+    pdf("DESeq_results/LRT/histogram_p_values.pdf")
+    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    hist(res_LRT_viz$pvalue ,
+         col = "blue", border = "white", xlab = "", ylab = "", main = "Frequencies of p-values")
+    dev.off()
+  }
+  
+  # MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
+  if (MA_plot) {
+    pdf("DESeq_results/LRT/MA_plot.pdf")
+    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    plotMA(res_LRT_viz, alpha = 0.05, main = "Full model vs. reduced model")  # shrink the log2 fold changes? -> Seems not necessary for the moment
+    dev.off()
+  }
+  
+  
+  # Boxplot of expression
+  if (histo_log2FoldChange) {
+    pdf("DESeq_results/LRT/histo_log2FoldChange.pdf")
+    par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+    sorted <- res_LRT_df[order(res_LRT_df$log2FoldChange),]
+    print(sorted)
+    #hist(log2FoldChange, data = sorted,  notch = TRUE,
+            #main = "log2FoldChange across genes",
+            #ylab = "log2FoldChange", xlab = "Genes", axes=FALSE, names=res_LRT$gene)
+    #plot(x=sorted$log2FoldChange, y=sorted$gene, xlim=c(0,150) , ylim=c(-20,20))
+    barplot(sorted$log2FoldChange, main="log2FoldChange", horiz=FALSE, names.arg=sorted$gene, col="#69b3a2", las=2, cex.axis=1.5)
+    dev.off()
+    
+  }
+  #print(res_LRT)
+  ### Save and return results
+  write_xlsx(res_LRT_thresh[,1:6],"DESeq_results/LRT/res_LRT.xlsx") # Save results of significant genes in an xlsx file
+  return(res_LRT_viz) # Return all genes (significant and non significant) results 
+  
 }
 
-# Call LRT test function
-res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff)
+# Call LRT test function and visualization of DESeq analysis results
+res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE)
 print(res_LRT)
 
-# Histogram distribution of the obtained p-values
-hist(res_LRT$pvalue ,
-     col = "grey", border = "white", xlab = "", ylab = "", main = "frequencies of p-values")
 
-# MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
-plotMA(res_LRT, alpha = 0.05, main = "Full model vs. reduced model")  # shrink the log2 fold changes?
 
-# Boxplot of expression
-boxplot(log2FoldChange ~ gene, data = res_LRT,  notch = TRUE,
-        main = "log2-transformed read counts",
-        ylab = "log2(read counts)", xlab = "Cells", axes=FALSE)
+
 
 ### Heatmaps ###
 # Sort the results according to the adjusted p-value
