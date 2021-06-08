@@ -106,38 +106,43 @@ padj.cutoff <- 0.05
 lfc.cutoff <- 0.58 # Corresponds to a fold change of ~1.5 
 
 
-# 1) First perform a LRT test to find genes (the ones with small adjusted p-values) for which the additionnal coefficient in the full model (ie neuron_type)
-# increases the log likelihood compared to the reduced model (just treatment) more than expected if the true coefficient (neuron_type) was zero.
-LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE, heatmaps=FALSE)
+
+# 1) First perform a LRT test to find genes (the ones with small adjusted p-values) for which the additionnal coefficient in the full model 
+# increases the log likelihood compared to the reduced model more than expected if the true coefficient added in the full model was zero.
+
+LRT_test <- function(data, folder, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA_plot=FALSE, histo_log2FoldChange=FALSE, heatmaps=FALSE)
 {
-  ### Perform LRT test 
-  dds_LRT <- data
-  design(dds_LRT) <- ~ treatment + neuron_type # you want to control for the treatment to only the test for the effect of neuron_type
-  dds_LRT <- DESeq(dds_LRT, test="LRT", full = design(dds_LRT), reduced = ~ treatment) # LRT test (testing the neuron_type and controlling for the treatment)
-  res_LRT_viz <- results(dds_LRT, test="LRT", tidy = FALSE) # Result table for vizualisation
-  res_LRT <- results(dds_LRT, test="LRT", tidy = TRUE) # Create an other result table with gene names as a column for saving results in an xlsx file (tidy=TRUE)
+  ### Output results of the LRT test 
+  res_LRT_viz <- results(data, test="LRT", tidy = FALSE) # Result table for vizualisation
+  res_LRT <- results(data, test="LRT", tidy = TRUE) # Create an other result table with gene names as a column for saving results in an xlsx file (tidy=TRUE)
   colnames(res_LRT)[1] <- "gene" # Gene names in the 1st column
-  
+
   res_LRT_viz$threshold <- as.logical(res_LRT_viz$padj < padj.cutoff) # Column to denote which genes are significant
   res_LRT$threshold <- as.logical(res_LRT$padj < padj.cutoff) 
   res_LRT_df <- data.frame(res_LRT)
   res_LRT_df <-  res_LRT_df[complete.cases(res_LRT_df), ] # Remove NA values
   res_LRT_thresh <- subset(res_LRT_df, threshold == TRUE) # Remove non significant genes
-
+  
+  if(dim(res_LRT_thresh)[1] == 0) {
+    histogram_p_values=FALSE
+    histo_log2FoldChange=FALSE
+    heatmaps=FALSE
+  }
   
   ### Visualize results
+  path= paste("DESeq_results/LRT", folder, sep="/")
   # Histogram distribution of the obtained p-values
   if (histogram_p_values) {
-    pdf("DESeq_results/LRT/histogram_p_values.pdf")
+    pdf(paste(path,"histogram_p_adj.pdf", sep="/"))
     par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
-    hist(res_LRT_viz$pvalue ,
-         col = "blue", border = "white", xlab = "", ylab = "", main = "Frequencies of p-values")
+    hist(res_LRT_viz$padj ,
+         col = "blue", border = "white", xlab = "", ylab = "", main = "Frequencies of adjusted p-values")
     dev.off()
   }
   
   # MA plot: genes that pass the significance threshold (adjusted p-value <0.05) are colored in blue
   if (MA_plot) {
-    pdf("DESeq_results/LRT/MA_plot.pdf")
+    pdf(paste(path,"MA_plot.pdf", sep="/"))
     par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
     plotMA(res_LRT_viz, alpha = 0.05, main = "Full model vs. reduced model")  # shrink the log2 fold changes? -> Seems not necessary for the moment
     dev.off()
@@ -145,9 +150,10 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
   
   # Boxplot of expression
   if (histo_log2FoldChange) {
-    pdf("DESeq_results/LRT/histo_log2FoldChange.pdf")
+    pdf(paste(path,"histo_log2FoldChange.pdf", sep="/"))
     par(mar = c(6.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
     sorted_LFC <- res_LRT_thresh[order(res_LRT_thresh$log2FoldChange),]
+    print(sorted_LFC)
     #### REGLER PB DE X-TICKS (TAILLE)
     barplot(sorted_LFC$log2FoldChange, main="log2FoldChange", xlab = "", ylab = "log2FoldChange", horiz=FALSE, names.arg=sorted_LFC$gene, col="#69b3a2", las=2, cex.axis=0.5)
     dev.off()
@@ -155,34 +161,50 @@ LRT_test <- function(data, padj.cutoff, lfc.cutoff, histogram_p_values=FALSE, MA
   
   # Heatmaps 
   if (heatmaps) {
-    pdf("DESeq_results/LRT/heatmap_sorted_padj.pdf")
+    pdf(paste(path,"heatmap_sorted_padj.pdf", sep="/"))
     sorted_padj <- res_LRT_thresh[order(res_LRT_thresh$padj), ]
     hm.mat_DGEgenes <- log.norm.counts[sorted_padj$gene, ] # Extract the normalized read counts for significantly DE genes into a matrix (aheatmap needs a matrix of values)
     aheatmap(hm.mat_DGEgenes, Rowv = NA, Colv = NA) # heatmap of log norm gene counts with sorted p-values (most significant genes at the top)
     dev.off()
     
     # Combine the heatmap with hierarchical clustering
-    pdf("DESeq_results/LRT/heatmap_clustering.pdf")
+    pdf(paste(path,"heatmap_clustering.pdf", sep="/"))
     aheatmap(hm.mat_DGEgenes, Rowv = TRUE, Colv = TRUE, # add dendrograms to rows and columns
              distfun = "euclidean", hclustfun = "average", scale = "row") # Scale the read counts per gene to emphasize the sample-type-specific differences
     # -> values are transformed into distances from the center of the row-specific average: (actual value - mean of the group) / standard deviation
     dev.off()
   }
-
+  
   ### Save and return results
-  write_xlsx(res_LRT_thresh[,1:7],"DESeq_results/LRT/res_LRT.xlsx") # Save results of significant genes in an xlsx file
+  write_xlsx(res_LRT_thresh[,1:7],paste(path,"DESeq_output.xlsx", sep="/")) # Save results of significant genes in an xlsx file
   return(res_LRT_viz) # Return all genes (significant and non significant) results 
   
 }
 
-# Call LRT test function and visualization of DESeq analysis results
-res_LRT <- LRT_test(DESeq.ds, padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE)
+# So we test first the effect of the factor neuron_type:
+dds_LRT_neuron_type <- DESeq.ds
+design(dds_LRT_neuron_type) <- ~ treatment + neuron_type # you want to control for the treatment to only the test for the effect of neuron_type
+dds_LRT_neuron_type <- DESeq(dds_LRT_neuron_type, test="LRT", full = design(dds_LRT_neuron_type), reduced = ~ treatment) # LRT test (testing the neuron_type and controlling for the treatment)
+res_LRT_neuron_type <- LRT_test(dds_LRT_neuron_type, "neuron_type", padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE)
+
+# Then we test the effect of the factor treatment:
+dds_LRT_treatment <- DESeq.ds
+design(dds_LRT_treatment) <- ~ neuron_type + treatment
+dds_LRT_treatment <- DESeq(dds_LRT_treatment, test="LRT", full = design(dds_LRT_treatment), reduced = ~ neuron_type) 
+res_LRT_treatment <- LRT_test(dds_LRT_treatment, "treatment", padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE) ## no significant genes found there
+
+# Finally we test the effect of the interaction treatment:neuron_type :
+dds_LRT_interaction <- DESeq.ds
+design(dds_LRT_interaction) <- ~ treatment + neuron_type + treatment:neuron_type
+dds_LRT_interaction <- DESeq(dds_LRT_interaction, test="LRT", full = design(dds_LRT_interaction), reduced = ~ treatment + neuron_type) 
+res_LRT_interaction <- LRT_test(dds_LRT_interaction, "interaction", padj.cutoff, lfc.cutoff, TRUE, TRUE, TRUE, TRUE)
+
 
 
 # 2) Then perform tests to find genes where there is any difference between one cell type and the mean of all neurons
 dds_mean <- DESeq.ds
-design(dds_mean) <- ~ treatment + neuron_type 
-dds_mean <- DESeq(dds_mean, betaPrior = FALSE) # It should have no intercept because I don't know what the intercept means there but if I remove it I can't set beta prior to TRUE... and if I set it to true with no intercept I have on level of neuron_type that disappears (AB_KCs precisely) ...
+design(dds_mean) <- ~ neuron_type # betaPrior=FALSE should be used for designs with interactions!! Can't include interactions there
+dds_mean <- DESeq(dds_mean, betaPrior = TRUE) # It should have no intercept because I don't know what the intercept means there but if I remove it I can't set beta prior to TRUE... and if I set it to true with no intercept I have on level of neuron_type that disappears (AB_KCs precisely) ...
 # But so if I keep the intercept with betaPrior=True, what does mean the intercept?? (even if I set it to 0 in my numeric contrast lists)
 print(resultsNames(dds_mean))
 
@@ -204,11 +226,11 @@ LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, path,
   
   # Plot counts
   if (plot_counts) {
-    for(gene_ in res_mean$gene) {
+    for(gene_ in res_mean_thresh$gene) {
       path_ = paste(path, "counts_plot", sep="/")
       pdf(paste(path_, gene_, sep="_"))
       par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
-      plotCounts(data, gene=gene_, intgroup="neuron_type") # set the thicks labels
+      plotCounts(data, gene=gene_, intgroup="neuron_type") ## set the thicks labels
       dev.off()
     }
   }
@@ -217,7 +239,7 @@ LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, path,
   if (histogram_p_values) {
     pdf(paste(path, "histogram_p_values.pdf",sep="/"))
     par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
-    hist(res_mean_viz$pvalue ,
+    hist(res_mean_viz$padj ,
          col = "blue", border = "white", xlab = "", ylab = "", main = "Frequencies of p-values")
     dev.off()
   }
@@ -263,67 +285,79 @@ LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, path,
   
 }
 
+print(resultsNames(dds_mean)) 
 # DAL vs mean:
 #res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,0,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
-                                 #TRUE, TRUE, TRUE, TRUE)
-
-res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,-1/6,-1/6,-1/6,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
-                                 FALSE, FALSE, FALSE, FALSE, FALSE)
-print(res_mean_DAL)
-print(design(dds_mean))
-print(resultsNames(dds_mean))
-plotCounts(dds_mean, gene=which.min(res_mean_DAL$padj), intgroup="neuron_type") # set the thicks labels
-## PB with the contrasts                   
+                                 #TRUE, TRUE, TRUE, TRUE, TRUE)
+res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,-1/6,1,-1/6,-1/6,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
+                                 TRUE, TRUE, TRUE, TRUE, TRUE)
+              
 # V2 vs mean:
-res_mean_V2 <- LRT_test_vs_mean(dds_mean, c(0,0,1,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V2", 
-                                TRUE, TRUE, TRUE, TRUE)
-plotCounts(dds_mean, gene=which.min(res_mean_V2$padj), intgroup="neuron_type")
+res_mean_V2 <- LRT_test_vs_mean(dds_mean, c(0,-1/6,-1/6,-1/6,-1/6,-1/6,1,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V2", 
+                                TRUE, TRUE, TRUE, TRUE, TRUE)
 
 # AB_KCs vs mean:
-res_mean_AB_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,1,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/AB_KCs", 
-                                    TRUE, TRUE, TRUE, TRUE)
+res_mean_AB_KCs <- LRT_test_vs_mean(dds_mean, c(0,1,-1/6,-1/6,-1/6,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/AB_KCs", 
+                                    TRUE, TRUE, TRUE, TRUE, TRUE)
 
 # G_KCs vs mean:
-res_mean_G_KCs <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,1,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G_KCs", 
-                                   TRUE, TRUE, TRUE, TRUE)
+res_mean_G_KCs <- LRT_test_vs_mean(dds_mean, c(0,-1/6,-1/6,-1/6,1,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G_KCs", 
+                                   TRUE, TRUE, TRUE, TRUE, TRUE)
 
 # V3 vs mean:
-res_mean_V3 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,1,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V3", 
-                                TRUE, TRUE, TRUE, TRUE)
+res_mean_V3 <- LRT_test_vs_mean(dds_mean, c(0,-1/6,-1/6,-1/6,-1/6,-1/6,-1/6,1), padj.cutoff, lfc.cutoff, "DESeq_results/mean/V3", 
+                                TRUE, TRUE, TRUE, TRUE, TRUE)
 
 # R27 vs mean:
-res_mean_R27 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,1,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/R27", 
-                                 TRUE, TRUE, TRUE, TRUE)
+res_mean_R27 <- LRT_test_vs_mean(dds_mean, c(0,-1/6,-1/6,-1/6,-1/6,1,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/R27", 
+                                 TRUE, TRUE, TRUE, TRUE, TRUE)
 
 # G386 vs mean:
-res_mean_G386 <- LRT_test_vs_mean(dds_mean, c(0,0,0,0,0,0,0,1), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G386", 
-                                  TRUE, TRUE, TRUE, TRUE)
+res_mean_G386 <- LRT_test_vs_mean(dds_mean, c(0,-1/6,-1/6,1,-1/6,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/G386", 
+                                  TRUE, TRUE, TRUE, TRUE, TRUE)
 
 
 
-# 3) Wald test comparisons
-Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cutoff, file_name)
+# 3) Wald test pairwise comparisons
+Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cutoff, path, plot_counts=FALSE)
 {
   # Compares two specified neuron types one to each other and writes the significant results in an xlsx file
   dds_Wald <- data
   colData(dds_Wald)$neuron_type <- relevel(colData(dds_Wald)$neuron_type, reference_type)
   design(dds_Wald) <- ~ neuron_type   
   dds_Wald <- DESeq(dds_Wald) # Wald test
+  print(resultsNames((dds_Wald)))
   res_Wald_viz <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=FALSE)
   res_Wald <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=TRUE)
+  print(res_Wald)
   colnames(res_Wald)[1] <- "gene"
+  
   
   res_Wald_viz$threshold <- as.logical(res_Wald_viz$padj < padj.cutoff) 
   res_Wald$threshold <- as.logical(res_Wald$padj < padj.cutoff) 
   res_Wald_df <- data.frame(res_Wald)
   res_Wald_thresh <- subset(res_Wald_df, threshold == TRUE)
-  write_xlsx(res_Wald_thresh[,1:7], file_name)
+  write_xlsx(res_Wald_thresh[,1:7], paste(path, "xlsx", sep="."))
+  
+  ### Visualize results
+  
+  # Plot counts
+  if (plot_counts) {
+    for(gene_ in res_Wald_thresh$gene) {
+      path_ = paste(path, "counts_plot", sep="_")
+      pdf(paste(path_, gene_, sep="_"))
+      par(mar = c(4.1, 4.4, 4.1, 1.9), xaxs="i", yaxs="i")
+      plotCounts(dds_Wald, gene=gene_, intgroup="neuron_type") ## set the thicks labels
+      dev.off()
+    }
+  }
+  
   return(res_Wald_df)
 
 }
 
 # DAL:
-res_DAL_V2 <- Wald_test(DESeq.ds, "V2", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V2.xlsx")
+res_DAL_V2 <- Wald_test(DESeq.ds, "V2", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V2", TRUE)
 res_DAL_V3 <- Wald_test(DESeq.ds, "V3", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V3.xlsx")
 res_DAL_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_AB_KCs.xlsx")
 res_DAL_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_G_KCs.xlsx")
