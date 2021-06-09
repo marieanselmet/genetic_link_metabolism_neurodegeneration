@@ -285,10 +285,7 @@ LRT_test_vs_mean <- function(data, contrast_list, padj.cutoff, lfc.cutoff, path,
   
 }
 
-print(resultsNames(dds_mean)) 
 # DAL vs mean:
-#res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,1,0,0,0,0,0,0), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
-                                 #TRUE, TRUE, TRUE, TRUE, TRUE)
 res_mean_DAL <- LRT_test_vs_mean(dds_mean, c(0,-1/6,1,-1/6,-1/6,-1/6,-1/6,-1/6), padj.cutoff, lfc.cutoff, "DESeq_results/mean/DAL", 
                                  TRUE, TRUE, TRUE, TRUE, TRUE)
               
@@ -326,10 +323,8 @@ Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cuto
   colData(dds_Wald)$neuron_type <- relevel(colData(dds_Wald)$neuron_type, reference_type)
   design(dds_Wald) <- ~ neuron_type   
   dds_Wald <- DESeq(dds_Wald) # Wald test
-  #print(resultsNames((dds_Wald)))
   res_Wald_viz <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=FALSE)
   res_Wald <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=TRUE)
-  #print(res_Wald_viz)
   colnames(res_Wald)[1] <- "gene"
   
   
