@@ -326,10 +326,10 @@ Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cuto
   colData(dds_Wald)$neuron_type <- relevel(colData(dds_Wald)$neuron_type, reference_type)
   design(dds_Wald) <- ~ neuron_type   
   dds_Wald <- DESeq(dds_Wald) # Wald test
-  print(resultsNames((dds_Wald)))
+  #print(resultsNames((dds_Wald)))
   res_Wald_viz <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=FALSE)
   res_Wald <- results(dds_Wald, contrast=c("neuron_type", compared_type, reference_type), alpha = padj.cutoff, test="Wald", tidy=TRUE)
-  print(res_Wald)
+  #print(res_Wald_viz)
   colnames(res_Wald)[1] <- "gene"
   
   
@@ -358,58 +358,58 @@ Wald_test <- function(data, compared_type, reference_type, padj.cutoff, lfc.cuto
 
 # DAL:
 res_DAL_V2 <- Wald_test(DESeq.ds, "V2", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V2", TRUE)
-res_DAL_V3 <- Wald_test(DESeq.ds, "V3", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V3.xlsx")
-res_DAL_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_AB_KCs.xlsx")
-res_DAL_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_G_KCs.xlsx")
-res_DAL_R27 <- Wald_test(DESeq.ds, "R27", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_R27.xlsx")
-res_DAL_G386 <- Wald_test(DESeq.ds, "G386", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_G386.xlsx")
+res_DAL_V3 <- Wald_test(DESeq.ds, "V3", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_V3", TRUE)
+res_DAL_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_AB_KCs", TRUE)
+res_DAL_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_G_KCs", TRUE)
+res_DAL_R27 <- Wald_test(DESeq.ds, "R27", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_R27", TRUE)
+res_DAL_G386 <- Wald_test(DESeq.ds, "G386", "DAL", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_DAL_G386", TRUE)
 
 # V2:
-res_V2_DAL <- Wald_test(DESeq.ds, "DAL", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_DAL.xlsx")
-res_V2_V3 <- Wald_test(DESeq.ds, "V3", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_V3.xlsx")
-res_V2_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_AB_KCs.xlsx")
-res_V2_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_G_KCs.xlsx")
-res_V2_R27 <- Wald_test(DESeq.ds, "R27", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_R27.xlsx")
-res_V2_G386 <- Wald_test(DESeq.ds, "G386", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_G386.xlsx")
+res_V2_DAL <- Wald_test(DESeq.ds, "DAL", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_DAL", TRUE)
+res_V2_V3 <- Wald_test(DESeq.ds, "V3", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_V3", TRUE)
+res_V2_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_AB_KCs", TRUE)
+res_V2_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_G_KCs", TRUE)
+res_V2_R27 <- Wald_test(DESeq.ds, "R27", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_R27", TRUE)
+res_V2_G386 <- Wald_test(DESeq.ds, "G386", "V2", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V2_G386", TRUE)
 
 # V3:
-res_V3_DAL <- Wald_test(DESeq.ds, "DAL", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_DAL.xlsx")
-res_V3_V2 <- Wald_test(DESeq.ds, "V2", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_V2.xlsx")
-res_V3_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_AB_KCs.xlsx")
-res_V3_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise//res_V3_G_KCs.xlsx")
-res_V3_R27 <- Wald_test(DESeq.ds, "R27", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_R27.xlsx")
-res_V3_G386 <- Wald_test(DESeq.ds, "G386", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_G386.xlsx")
+res_V3_DAL <- Wald_test(DESeq.ds, "DAL", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_DAL", TRUE)
+res_V3_V2 <- Wald_test(DESeq.ds, "V2", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_V2", TRUE)
+res_V3_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_AB_KCs", TRUE)
+res_V3_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise//res_V3_G_KCs", TRUE)
+res_V3_R27 <- Wald_test(DESeq.ds, "R27", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_R27", TRUE)
+res_V3_G386 <- Wald_test(DESeq.ds, "G386", "V3", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_V3_G386", TRUE)
 
 # AB_KCs:
-res_AB_KCs_DAL <- Wald_test(DESeq.ds, "DAL", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_DAL.xlsx")
-res_AB_KCs_V2 <- Wald_test(DESeq.ds, "V2", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_V2.xlsx")
-res_AB_KCs_V3 <- Wald_test(DESeq.ds, "V3", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_V3.xlsx")
-res_AB_KCs_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_G_KCs.xlsx")
-res_AB_KCs_R27 <- Wald_test(DESeq.ds, "R27", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_R27.xlsx")
-res_AB_KCs_G386 <- Wald_test(DESeq.ds, "G386", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_G386.xlsx")
+res_AB_KCs_DAL <- Wald_test(DESeq.ds, "DAL", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_DAL", TRUE)
+res_AB_KCs_V2 <- Wald_test(DESeq.ds, "V2", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_V2", TRUE)
+res_AB_KCs_V3 <- Wald_test(DESeq.ds, "V3", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_V3", TRUE)
+res_AB_KCs_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_G_KCs", TRUE)
+res_AB_KCs_R27 <- Wald_test(DESeq.ds, "R27", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_R27", TRUE)
+res_AB_KCs_G386 <- Wald_test(DESeq.ds, "G386", "AB_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_AB_KCs_G386", TRUE)
 
 # G_KCs:
-res_G_KCs_DAL <- Wald_test(DESeq.ds, "DAL", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_DAL.xlsx")
-res_G_KCs_V2 <- Wald_test(DESeq.ds, "V2", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_V2.xlsx")
-res_G_KCs_V3 <- Wald_test(DESeq.ds, "V3", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_V3.xlsx")
-res_G_KCs_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_AB_KCs.xlsx")
-res_G_KCs_R27 <- Wald_test(DESeq.ds, "R27", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_R27.xlsx")
-res_G_KCs_G386 <- Wald_test(DESeq.ds, "G386", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_G386.xlsx")
+res_G_KCs_DAL <- Wald_test(DESeq.ds, "DAL", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_DAL", TRUE)
+res_G_KCs_V2 <- Wald_test(DESeq.ds, "V2", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_V2", TRUE)
+res_G_KCs_V3 <- Wald_test(DESeq.ds, "V3", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_V3", TRUE)
+res_G_KCs_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_AB_KCs", TRUE)
+res_G_KCs_R27 <- Wald_test(DESeq.ds, "R27", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_R27", TRUE)
+res_G_KCs_G386 <- Wald_test(DESeq.ds, "G386", "G_KCs", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G_KCs_G386", TRUE)
 
 # R27:
-res_R27_DAL <- Wald_test(DESeq.ds, "DAL", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_DAL.xlsx")
-res_R27_V2 <- Wald_test(DESeq.ds, "V2", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_V2.xlsx")
-res_R27_V3 <- Wald_test(DESeq.ds, "V3", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_V3.xlsx")
-res_R27_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_AB_KCs.xlsx")
-res_R27_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_G_KCs.xlsx")
-res_R27_G386 <- Wald_test(DESeq.ds, "G386", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_G386.xlsx")
+res_R27_DAL <- Wald_test(DESeq.ds, "DAL", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_DAL", TRUE)
+res_R27_V2 <- Wald_test(DESeq.ds, "V2", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_V2", TRUE)
+res_R27_V3 <- Wald_test(DESeq.ds, "V3", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_V3", TRUE)
+res_R27_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_AB_KCs", TRUE)
+res_R27_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_G_KCs", TRUE)
+res_R27_G386 <- Wald_test(DESeq.ds, "G386", "R27", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_R27_G386", TRUE)
 
 # G386:
-res_G386_DAL <- Wald_test(DESeq.ds, "DAL", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_DAL.xlsx")
-res_G386_V2 <- Wald_test(DESeq.ds, "V2", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_V2.xlsx")
-res_G386_V3 <- Wald_test(DESeq.ds, "V3", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_V3.xlsx")
-res_G386_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_AB_KCs.xlsx")
-res_G386_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_G_KCs.xlsx")
-res_G386_R27 <- Wald_test(DESeq.ds, "R27", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_R27.xlsx")
+res_G386_DAL <- Wald_test(DESeq.ds, "DAL", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_DAL", TRUE)
+res_G386_V2 <- Wald_test(DESeq.ds, "V2", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_V2", TRUE)
+res_G386_V3 <- Wald_test(DESeq.ds, "V3", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_V3", TRUE)
+res_G386_AB_KCs <- Wald_test(DESeq.ds, "AB_KCs", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_AB_KCs", TRUE)
+res_G386_G_KCs <- Wald_test(DESeq.ds, "G_KCs", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_G_KCs", TRUE)
+res_G386_R27 <- Wald_test(DESeq.ds, "R27", "G386", padj.cutoff, lfc.cutoff, "DESeq_results/pairwise/res_G386_R27", TRUE)
 
 
